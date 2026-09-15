@@ -1,0 +1,29 @@
+## Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Build results
+[Bb]in/
+[Oo]bj/
+[Dd]ebug*/
+[Rr]elease*/
+
+## Test results
+[Tt]est[Rr]esult*/
+
+## Visual Studio Code
+.vscode/
+
+## NuGet
+*.nupkg
+*.snupkg
+
+## Operating system files
+.DS_Store
+Thumbs.db
+
+## ASP.NET Core local settings
+appsettings.Local.json
