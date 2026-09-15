@@ -1,41 +1,125 @@
-﻿@{
+﻿@model Dictionary<int, WebApplication.Models.TodoItem>
+
+@{
     ViewData["Title"] = "Home Page";
 }
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"]</title>
-    <h1>TodoApp</h1>
+
+    <style>
+            body {
+                font-family: sans-serif;
+                max-width: 500px;
+                margin: 40px auto;
+                padding: 0 20px;
+                color: #333;
+            }
+
+            h1 {
+                border-bottom: 2px solid #333;
+                padding-bottom: 8px;
+            }
+
+            .card {
+                background: #f9f9f9;
+                padding: 15px;
+                border-radius: 6px;
+                margin-bottom: 20px;
+                border: 1px solid #ddd;
+            }
+
+            form {
+                display: flex;
+                gap: 8px;
+            }
+
+            input[type="text"] {
+                padding: 8px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+            }
+
+            input[type="number"] {
+                width: 60px;
+            }
+
+            input[name="Title"], input[placeholder*="delete"] {
+                flex: 1;
+            }
+
+            button {
+                padding: 8px 16px;
+                background-color: #007bff;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+
+            button.delete-btn {
+                background-color: #dc3545;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            th, td {
+                padding: 8px;
+                text-align: left;
+                border-bottom: 1px solid #ddd;
+            }
+
+            th {
+                background-color: #eee;
+            }
+    </style>
 </head>
 <body>
-    <!-- Todo List -->
-    <ul>
-        <li>Task 1</li>
-        <li>Task 2</li>
-        <li>Task 3</li>
-    </ul>
+    <h1>TodoApp</h1>
 
-    <!--必要な機能はタスクを登録する-->
-    <form>
-        <input type="text" placeholder="Enter a new task" />
-        <button type="submit">Add Task</button>
-    </form>
+    <!-- タスク追加 -->
+    <div class="card">
+        <h3>タスクの追加</h3>
+        <form action="/Home/AddTodoItem" method="post">
+            <input type="number" name="Id" placeholder="ID" required />
+            <input type="text" name="Title" placeholder="タスク名" required />
+            <button type="submit">追加</button>
+        </form>
+    </div>
 
-    <!--登録したタスクを表示する-->
-    <ul>
-        <li>Task 1</li>
-        <li>Task 2</li>
-        <li>Task 3</li>
-    </ul>
+    <!-- タスク削除 -->
+    <div class="card">
+        <h3>タスクの削除</h3>
+        <form action="/Home/DeleteTodoItem" method="post">
+            <input type="number" name="Id" placeholder="削除するタスクのID" required />
+            <button type="submit" class="delete-btn">削除</button>
+        </form>
+    </div>
 
-    <!--登録したタスクを削除する-->
-    <form>
-        <input type="text" placeholder="Enter the task to delete" />
-        <button type="submit">Delete Task</button>
-    </form>
-
+    <!-- タスク一覧 -->
+    <h3>Task List</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 80px;">ID</th>
+                <th>Title</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Value.Id</td>
+                    <td>@item.Value.Title</td>
+                </tr>
+            }
+        </tbody>
+    </table>
 </body>
 </html>
