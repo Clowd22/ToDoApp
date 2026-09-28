@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>スマートTODO管理</title>
+  <style>
+    :root {
+      --bg: #f3f4f6;
+      --card: #ffffff;
+      --border: #e5e7eb;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --primary: #4f46e5;
+      --primary-dark: #4338ca;
+      --high: #ef4444;
+      --medium: #f59e0b;
+      --low: #3b82f6;
+      --done: #22c55e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans",
+        "Noto Sans JP", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 24px 16px 64px;
+    }
+    .container { max-width: 720px; margin: 0 auto; }
+    h1 { font-size: 1.6rem; margin-bottom: 4px; }
+    .subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 24px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .add-form { display: flex; flex-direction: column; gap: 10px; }
+    .add-form input, .add-form textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+      font-family: inherit;
+    }
+    .add-form textarea { resize: vertical; min-height: 56px; }
+    .add-form input:focus, .add-form textarea:focus {
+      outline: 2px solid var(--primary);
+      outline-offset: -1px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-sm {
+      padding: 5px 12px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .btn-sm:hover { background: #e5e7eb; }
+    .btn-sm.danger:hover { background: #fee2e2; border-color: #fca5a5; color: #dc2626; }
+    .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .filters select, .filters .btn-sm { padding: 7px 12px; }
+    .task {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .task.completed { opacity: 0.6; }
+    .task.completed .task-title { text-decoration: line-through; }
+    .task-check {
+      margin-top: 4px;
+      width: 20px;
+      height: 20px;
+      accent-color: var(--done);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .task-body { flex: 1; min-width: 0; }
+    .task-title { font-weight: 600; word-break: break-word; }
+    .task-desc { color: var(--muted); font-size: 0.9rem; margin-top: 2px; word-break: break-word; }
+    .task-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 2px 10px;
+      border-radius: 999px;
+      color: #fff;
+    }
+    .badge.high { background: var(--high); }
+    .badge.medium { background: var(--medium); }
+    .badge.low { background: var(--low); }
+    .badge.cat {
+      background: #eef2ff;
+      color: var(--primary-dark);
+      border: 1px solid #c7d2fe;
+    }
+    .badge.done { background: var(--done); }
+    .task-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .empty { text-align: center; color: var(--muted); padding: 32px 0; }
+    .error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #dc2626;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .footer { color: var(--muted); font-size: 0.8rem; text-align: center; margin-top: 24px; }
+    .footer a { color: var(--primary); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>✅ スマートTODO管理</h1>
+    <p class="subtitle">
+      タスクを追加すると、タイトル・内容から「優先度」と「カテゴリ」を自動判定します
+    </p>
+
+    <div class="error" id="error"></div>
+
+    <div class="card">
+      <form class="add-form" id="add-form">
+        <input type="text" id="title" placeholder="タスクのタイトル（例：明日までに企画書を提出する）" required maxlength="100" />
+        <textarea id="description" placeholder="詳細（任意）" maxlength="500"></textarea>
+        <button type="submit" class="btn btn-primary">タスクを追加</button>
+      </form>
+    </div>
+
+    <div class="filters">
+      <select id="filter-status" class="btn-sm">
+        <option value="all">すべて</option>
+        <option value="active">未完了</option>
+        <option value="completed">完了済み</option>
+      </select>
+      <select id="filter-priority" class="btn-sm">
+        <option value="">優先度: すべて</option>
+        <option value="高">優先度: 高</option>
+        <option value="中">優先度: 中</option>
+        <option value="低">優先度: 低</option>
+      </select>
+      <select id="filter-category" class="btn-sm">
+        <option value="">カテゴリ: すべて</option>
+        <option>仕事</option>
+        <option>家事</option>
+        <option>学習</option>
+        <option>健康</option>
+        <option>プライベート</option>
+        <option>その他</option>
+      </select>
+      <button type="button" class="btn-sm" id="refresh-btn">更新</button>
+    </div>
+
+    <div id="task-list"></div>
+
+    <p class="footer">
+      この画面は <a href="/docs" target="_blank">/docs</a>（OpenAPIドキュメント）と連動しています
+    </p>
+  </div>
+
+  <script>
+    const listEl = document.getElementById("task-list");
+    const errorEl = document.getElementById("error");
+    const addForm = document.getElementById("add-form");
+    const filterStatus = document.getElementById("filter-status");
+    const filterPriority = document.getElementById("filter-priority");
+    const filterCategory = document.getElementById("filter-category");
+
+    function showError(msg) {
+      errorEl.textContent = msg;
+      errorEl.style.display = msg ? "block" : "none";
+    }
+
+    const PRIORITY_CLASS = { "高": "high", "中": "medium", "低": "low" };
+
+    function priorityBadge(priority) {
+      const cls = PRIORITY_CLASS[priority] || "medium";
+      return `<span class="badge ${cls}">優先度: ${priority}</span>`;
+    }
+
+    function renderTask(task) {
+      const article = document.createElement("article");
+      article.className = "task" + (task.completed ? " completed" : "");
+      article.dataset.id = task.id;
+
+      const desc = task.description
+        ? `<p class="task-desc">${escapeHtml(task.description)}</p>`
+        : "";
+
+      article.innerHTML = `
+        <input type="checkbox" class="task-check" ${task.completed ? "checked" : ""}
+               title="完了状態を切り替え" aria-label="完了状態を切り替え" />
+        <div class="task-body">
+          <div class="task-title">${escapeHtml(task.title)}</div>
+          ${desc}
+          <div class="task-meta">
+            ${priorityBadge(task.priority)}
+            <span class="badge cat">${escapeHtml(task.category)}</span>
+            ${task.completed ? '<span class="badge done">完了</span>' : ""}
+          </div>
+        </div>
+        <div class="task-actions">
+          <button class="btn-sm danger" title="削除">削除</button>
+        </div>
+      `;
+
+      article.querySelector(".task-check").addEventListener("change", () => toggleTask(task.id));
+      article.querySelector(".btn-sm.danger").addEventListener("click", () => deleteTask(task.id));
+      return article;
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    async function loadTasks() {
+      const params = new URLSearchParams({
+        status: filterStatus.value,
+      });
+      if (filterPriority.value) params.set("priority", filterPriority.value);
+      if (filterCategory.value) params.set("category", filterCategory.value);
+
+      try {
+        const res = await fetch(`/tasks?${params.toString()}`);
+        if (!res.ok) throw new Error(`一覧の取得に失敗しました (${res.status})`);
+        const tasks = await res.json();
+        listEl.innerHTML = "";
+        if (tasks.length === 0) {
+          listEl.innerHTML =
+            '<p class="empty">タスクがありません。上のフォームから追加してください。</p>';
+          return;
+        }
+        tasks.forEach((task) => listEl.appendChild(renderTask(task)));
+        showError("");
+      } catch (err) {
+        showError(err.message);
+      }
+    }
+
+    async function toggleTask(id) {
+      try {
+        const res = await fetch(`/tasks/${id}/toggle`, { method: "PATCH" });
+        if (!res.ok) throw new Error(`完了状態の更新に失敗しました (${res.status})`);
+        await loadTasks();
+      } catch (err) {
+        showError(err.message);
+        await loadTasks();
+      }
+    }
+
+    async function deleteTask(id) {
+      if (!confirm("このタスクを削除しますか？")) return;
+      try {
+        const res = await fetch(`/tasks/${id}`, { method: "DELETE" });
+        if (!res.ok) throw new Error(`削除に失敗しました (${res.status})`);
+        await loadTasks();
+      } catch (err) {
+        showError(err.message);
+      }
+    }
+
+    addForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const title = document.getElementById("title").value.trim();
+      const description = document.getElementById("description").value.trim();
+      if (!title) return;
+
+      try {
+        const res = await fetch("/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, description }),
+        });
+        if (!res.ok) throw new Error(`タスクの追加に失敗しました (${res.status})`);
+        addForm.reset();
+        await loadTasks();
+      } catch (err) {
+        showError(err.message);
+      }
+    });
+
+    [filterStatus, filterPriority, filterCategory].forEach((el) =>
+      el.addEventListener("change", loadTasks)
+    );
+    document.getElementById("refresh-btn").addEventListener("click", loadTasks);
+
+    loadTasks();
+  </script>
+</body>
+</html>
